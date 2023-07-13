@@ -7,4 +7,6 @@ finance.db
 *.pid
 *.out
 .ipynb_checkpoints
-env/
+.gitignore
+.env
+/venv/

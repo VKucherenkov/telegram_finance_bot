@@ -2,26 +2,24 @@
 import logging
 import os
 
-import aiohttp
 from aiogram import Bot, Dispatcher, executor, types
 
 import exceptions
 import expenses
 from categories import Categories
+from keyboard.keyboard import markup_main
 from middlewares import AccessMiddleware
+import dotenv
 
+
+dotenv.load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 
 API_TOKEN = os.getenv("TELEGRAM_API_TOKEN")
-PROXY_URL = os.getenv("TELEGRAM_PROXY_URL")
-PROXY_AUTH = aiohttp.BasicAuth(
-    login=os.getenv("TELEGRAM_PROXY_LOGIN"),
-    password=os.getenv("TELEGRAM_PROXY_PASSWORD")
-)
 ACCESS_ID = os.getenv("TELEGRAM_ACCESS_ID")
 
-bot = Bot(token=API_TOKEN, proxy=PROXY_URL, proxy_auth=PROXY_AUTH)
+bot = Bot(token=API_TOKEN)
 dp = Dispatcher(bot)
 dp.middleware.setup(AccessMiddleware(ACCESS_ID))
 
@@ -35,7 +33,7 @@ async def send_welcome(message: types.Message):
         "Сегодняшняя статистика: /today\n"
         "За текущий месяц: /month\n"
         "Последние внесённые расходы: /expenses\n"
-        "Категории трат: /categories")
+        "Категории трат: /categories", reply_markup=markup_main)
 
 
 @dp.message_handler(lambda message: message.text.startswith('/del'))
@@ -47,7 +45,7 @@ async def del_expense(message: types.Message):
     await message.answer(answer_message)
 
 
-@dp.message_handler(commands=['categories'])
+@dp.message_handler(text=['/categories', 'Категории трат'])
 async def categories_list(message: types.Message):
     """Отправляет список категорий расходов"""
     categories = Categories().get_all_categories()
@@ -56,21 +54,21 @@ async def categories_list(message: types.Message):
     await message.answer(answer_message)
 
 
-@dp.message_handler(commands=['today'])
+@dp.message_handler(text=['/today', 'Траты за день'])
 async def today_statistics(message: types.Message):
     """Отправляет сегодняшнюю статистику трат"""
     answer_message = expenses.get_today_statistics()
     await message.answer(answer_message)
 
 
-@dp.message_handler(commands=['month'])
+@dp.message_handler(text=['/month', 'Траты за месяц'])
 async def month_statistics(message: types.Message):
     """Отправляет статистику трат текущего месяца"""
     answer_message = expenses.get_month_statistics()
     await message.answer(answer_message)
 
 
-@dp.message_handler(commands=['expenses'])
+@dp.message_handler(text=['/expenses', 'Последние траты'])
 async def list_expenses(message: types.Message):
     """Отправляет последние несколько записей о расходах"""
     last_expenses = expenses.last()
